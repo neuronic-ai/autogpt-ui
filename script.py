@@ -6,7 +6,7 @@ import sys
 
 
 CMD = (
-    "OPENAI_API_KEY=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 "
+    "OPENAI_API_KEY=############################################"
     "PYTHONPATH=${PYTHONPATH}:/Users/sukiyaki/PycharmProjects/auto-gpt-ui/backend/src "
     "python "
     "/Users/sukiyaki/PycharmProjects/auto-gpt-ui/backend/src/app/auto_gpt/cli.py "
