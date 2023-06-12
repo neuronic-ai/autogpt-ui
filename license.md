@@ -12,5 +12,5 @@ In all cases, whether a product is produced by you or us, credit must be given t
 
 ## Credits
 
-- Original Software Developed by [Neuronic AI](https://github.com/neuronicai)
+- Original Software Developed by [Neuronic AI](https://github.com/neuronicai) & Significant-Gravitas (https://github.com/Significant-Gravitas/Auto-GPT)
 
