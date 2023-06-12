@@ -1,0 +1,48 @@
+// database
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// generator
+generator client {
+  provider                    = "prisma-client-py"
+  recursive_type_depth        = 5
+  partial_type_generator      = "prisma_partial/types.py"
+  enable_experimental_decimal = true
+}
+
+model User {
+  id BigInt @id @default(autoincrement())
+
+  username String @unique
+  bot      Bot?
+
+  @@map("user")
+}
+
+model Bot {
+  id BigInt @id @default(autoincrement())
+
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id BigInt
+
+  fast_engine  String
+  smart_engine String
+  image_size   Int
+  fast_tokens  Int
+  smart_tokens Int
+  ai_settings  Json
+
+  worker_message_id String?
+  runs_left         Int     @default(0)
+
+  created_dt DateTime @default(now())
+  updated_dt DateTime @updatedAt
+
+  is_active Boolean @default(true)
+  is_failed Boolean @default(false)
+
+  @@unique([user_id])
+  @@map("bot")
+}

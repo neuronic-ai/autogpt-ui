@@ -1,0 +1,95 @@
+version: '3.4'
+
+services:
+  proxy:
+    image: traefik:v2.9
+    command:
+      # Enable Docker in Traefik, so that it reads labels from Docker services
+      - --providers.docker
+      # Add a constraint to only use services with the label for this stack
+      # from the env var TRAEFIK_TAG
+      - --providers.docker.constraints=Label(`traefik.constraint-label-stack`, `${TRAEFIK_TAG?Variable not set}`)
+      # Do not expose all Docker services, only the ones explicitly exposed
+      - --providers.docker.exposedbydefault=false
+      # Enable the access log, with HTTP requests
+      - --accesslog
+      # Enable the Traefik log, for configurations and errors
+      - --log
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.forwardedHeaders.insecure=true
+    restart: on-failure
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - '8160:80'
+  worker:
+    build:
+      context: backend
+    command:
+      - worker
+    depends_on:
+      - mysql
+    restart: on-failure
+    environment:
+      - TZ=Etc/UTC
+    env_file:
+      - env-backend.env
+    volumes:
+      - wb-data:/workspaces
+  api:
+    build:
+      context: backend
+    command:
+      - api
+    depends_on:
+      - mysql
+    restart: on-failure
+    environment:
+      - TZ=Etc/UTC
+    env_file:
+      - env-backend.env
+    volumes:
+      - wb-data:/workspaces
+    labels:
+      - traefik.enable=true
+      - traefik.constraint-label-stack=${TRAEFIK_TAG?Variable not set}
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.rule=PathPrefix(`${BASE_URL:-}/api`) || PathPrefix(`${BASE_URL:-}/docs`) || PathPrefix(`${BASE_URL:-}/redoc`) || PathPrefix(`${BASE_URL:-}/openapi.json`)
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.middlewares=base-stripprefix
+      - traefik.http.middlewares.base-stripprefix.stripprefix.prefixes=${BASE_URL:-}
+      - traefik.http.services.${STACK_NAME?Variable not set}-backend.loadbalancer.server.port=80
+  frontend:
+    build:
+      context: frontend
+    depends_on:
+      - api
+    restart: on-failure
+    environment:
+      - TZ=Etc/UTC
+    env_file:
+      - env-frontend.env
+    labels:
+      - traefik.enable=true
+      - traefik.constraint-label-stack=${TRAEFIK_TAG?Variable not set}
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.rule=PathPrefix(`/`)
+      - traefik.http.services.${STACK_NAME?Variable not set}-frontend.loadbalancer.server.port=3000
+  mysql:
+    image: mysql
+    restart: unless-stopped
+    environment:
+      - TZ=Etc/UTC
+    env_file:
+      - env-mysql.env
+    volumes:
+      - db-data:/var/lib/mysql
+  redis:
+    image: redis
+    restart: unless-stopped
+    environment:
+      - TZ=Etc/UTC
+    volumes:
+      - redis-data:/data
+
+volumes:
+  db-data:
+  redis-data:
+  wb-data:
