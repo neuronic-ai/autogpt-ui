@@ -21,9 +21,9 @@ Click the image below to watch a demo of our GUI.
 
  🧠 AutoGPT is an experimental open-source AI Agent application showcasing the capabilities of the GPT-3.5 & GPT-4 language model. One of the first examples of GPT-4 running fully autonomously, AutoGPT pushes the boundaries of what is possible with AI.
 
-However, its potential was locked behind a command-line interface, which was intimidating, diffult and or limiting to some users. We at Neuronic AI decided to change this. We developed a no non-sense opensource Graphical User Interface (GUI) for AutoGPT to bring this powerful technology closer to everyone and enable users to engage AutoGPT in a meaningful way. We also take the interface to another level by enabling multi-user support and the ability to integrate with existing websites.
+AutoGPT has fantastic potential that was locked behind a command-line interface, which for many users can be intimidating, difficult, inconvenient and/or limiting. We at Neuronic AI decided to develop a no non-sense opensource Graphical User Interface (GUI) for AutoGPT to bring this powerful technology closer to everyone and enable users to engage AutoGPT in a meaningful way. We also take the interface to another level by enabling multi-user support and the ability to integrate with existing websites.
 
-Because setting up AutoGPT can sometimes be difficult with various version conflicts and dependencies issues, and because how fast AutoGPT is changing which creates the the potential need to re-factor or re-base code between releases, we embed a specific version of AutoGPT along with all of its dependencies and appropriately versioned stacks to support normal operation with our GUI.  The initial opensource release 1.0 is built on top of AutoGPT Stable 0.4.0.
+Because (#1) setting up AutoGPT correctly can sometimes be difficult with various version conflicts and dependencies issues, and (#2) because how fast AutoGPT is changing which creates the potential need to re-factor or re-base code between releases, we embed a specific version of AutoGPT along with all of its dependencies and appropriately versioned stacks to support normal operation with our GUI.  The initial opensource release 1.0 is built on top of AutoGPT Stable 0.4.0.
 
 ## Features
 
