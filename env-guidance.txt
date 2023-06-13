@@ -37,7 +37,7 @@ EXECUTE_LOCAL_COMMANDS=1
 DENY_COMMANDS=nano,vim,vi,emacs,top,ping,ssh,scp
 
 
-# Database URL, ie: mysql://user:password@localhost:3306/auto_gpt_ui
+# Database URL, ie: mysql://user:password@mysql:3306/auto_gpt_ui
 DATABASE_URL= (See example above, that is if you are using the mysql container we bring online with this build, use the user and pass you set in mysql config or even better, set up a dedicated user for the DB)
 
 # Redis is used for enabling users to stop a job and then start it off where they left off, you can use local redis we add container for using the below
