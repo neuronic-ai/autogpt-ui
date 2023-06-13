@@ -1,0 +1,67 @@
+#This AutoGPT GUI is containerized, you should install the latest docker.  Here are instructions for installing the latest docker and docker-compose (1.26) on your local ubuntu/debian box.
+
+
+###Remove any existing docker and install the latest
+#--------------------------------
+
+sudo apt-get remove docker docker-engine docker.io containerd runc
+
+#----------------------
+
+sudo apt-get update
+sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common
+
+# pull down the key
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+#-------------
+
+sudo apt-key fingerprint 0EBFCD88
+
+#pub   rsa4096 2017-02-22 [SCEA]
+#      9DC8 5822 9FC7 DD38 854A  E2D8 8D81 803C 0EBF CD88
+#uid           [ unknown] Docker Release (CE deb) <docker@docker.com>
+#sub   rsa4096 2017-02-22 [S]
+
+#---------------
+
+sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+
+
+sudo apt-get update
+ sudo apt-get install docker-ce docker-ce-cli containerd.io
+
+-----------------------
+
+#Install latest docker-compose
+
+sudo curl -L "https://github.com/docker/compose/releases/download/1.26.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+
+sudo chmod +x /usr/local/bin/docker-compose
+
+sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+#You have successfully installed Docker and ready to run any containerized applications on this machine.
+
+
+#######################################
+Important troubleshooting tips for Docker
+
+(sudo) docker ps -a   |  Show all containers and their status, look for any that may be down
+(sudo) docker restart/start/stop CONTAINER_NAME   |  Reboot the container or shut it down
+(sudo) docker logs CONTAINER_NAME or ID  | Use your actual container name or container ID with this command to look at its logs
+(sudo) docker exec -it CONTAINER_NAME or ID /bin/bash   | Use this to conenct to console into this containers command line
+
+If a container is down, look at its logs to try to determine why it is down, if its failing, it probably doesnt like one or more of your env settings and it should tell you about that in the logs.
+
+#Note
+You can install mycli to manage MySQL database locally with command prompt or if you have PHPMyAdmin you can conenct on this machines, port 3306, using root and the password you set in your env files.
