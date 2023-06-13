@@ -1,0 +1,56 @@
+env-guidance.txt
+
+::::::::::::::
+.env
+::::::::::::::
+#Dont Change these
+TRAEFIK_TAG=traefik-public
+STACK_NAME=autogpt
+
+
+::::::::::::::
+env-backend.env
+::::::::::::::
+NO_AUTH=1  (This should be 1 for a stand alone, we can remove all session config when no_auth=1)
+
+WORKSPACES_DIR=/workspaces (Or wherever you want us to save workspace files that you upload or that autoGPT creates)
+
+PYTHON_BINARY=python3 (This can be used to change the python command/version we use, this should stay python3 for the foreseeable future)
+
+# Tail logs for this much rows for the UI (The python log that shows the work being done is cyclical, this says how many lines before it starts to overwrite its older content)
+TAIL_LOG_COUNT=500 
+
+# Max size for a workspace file to upload, 5MiB by default (at 5mb you wont be able so save any more to your workspace unless you set this higher)
+MAX_WORKSPACE_FILE_SIZE=5242880 
+
+# Max size for a cache file before it gets truncated, 5MiB by default (default is probably fine)
+MAX_CACHE_SIZE=5242880 
+
+# my openai key (Ad your openai key here https://platform.openai.com/account/api-keys)
+#OPENAI_LOCAL_KEY=##############################################
+
+# Add execute_code command to auto-gpt, don't use in production, private servers only, this enables GPT to do about anything on your server
+ALLOW_CODE_EXECUTION=1
+EXECUTE_LOCAL_COMMANDS=1
+
+# Restrict commands if you want, otherwise omit this line
+DENY_COMMANDS=nano,vim,vi,emacs,top,ping,ssh,scp
+
+
+# Database URL, ie: mysql://user:password@localhost:3306/auto_gpt_ui
+DATABASE_URL= (See example above, that is if you are using the mysql container we bring online with this build, use the user and pass you set in mysql config or even better, set up a dedicated user for the DB)
+
+# Redis is used for enabling users to stop a job and then start it off where they left off, you can use local redis we add container for using the below
+REDIS_URL=redis://redis:6379/0 
+
+::::::::::::::
+env-frontend.env
+::::::::::::::
+# base url for the backend used by the frontend to make server-side calls, ie: http://api (For a local single user install, dont change this)
+NUXT_API_BASE=http://api
+
+::::::::::::::
+env-mysql.env
+::::::::::::::
+MYSQL_ROOT_PASSWORD=(You set this to what you want)
+MYSQL_DATABASE=autogpt (If you change this, make sure you update your mysql connection string)
