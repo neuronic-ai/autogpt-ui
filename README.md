@@ -9,6 +9,11 @@ Click the image below to watch a demo of our GUI.
 [![Demo Video](https://img.youtube.com/vi/HcbhtEIK2RE/0.jpg)](https://youtu.be/HcbhtEIK2RE)
 
 
+Click the image below for a tutorial on bringing this to life from scratch
+
+[![Demo Video](https://img.youtube.com/vi/7Z7V03psycI/0.jpg)](https://www.youtube.com/watch?v=7Z7V03psycI)
+
+
 ### Table of Contents
 1. [About the Project](#about-the-project)
 2. [Features](#features)
