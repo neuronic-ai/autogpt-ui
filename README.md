@@ -2,24 +2,40 @@
 
 Welcome to the official repository of **Neuronic AI's, AutoGPT GUI**. This open-source project provides an intuitive and easy-to-use graphical interface for the powerful [AutoGPT Open Source AI Agent](https://github.com/Significant-Gravitas/Auto-GPT). Driven by GPT-3.5 & GPT-4, AutoGPT has the capability to chain together LLM "thoughts", enabling the AI to autonomously achieve whatever goal you set. 
 
-## Demo
+### Table of Contents
+1. [Demo-Tutorial](#demo-tutorial)
+2. [About the Project](#about-the-project)
+3. [Features](#features)
+4. [Installation](#installation)
+5. [Contributing](#contributing)
+
+
+### Demo-Tutorial
+Various multimedia and content in support of using this code
+
+#### Installation
+Click the image below for a tutorial on installing AutoGPT-ui
+
+[![Demo Video](https://img.youtube.com/vi/7Z7V03psycI/0.jpg)](https://www.youtube.com/watch?v=7Z7V03psycI)
+
+
+#### Release 1.0:
 
 Click the image below to watch a demo of our GUI.
 
 [![Demo Video](https://img.youtube.com/vi/HcbhtEIK2RE/0.jpg)](https://youtu.be/HcbhtEIK2RE)
 
 
-Click the image below for a tutorial on bringing this to life from scratch
+##### Release 1.1
+In this release we add support for plugins, we add a "Rapid Goal" entry for fast single goal engagement while still supporting ai_settings files for complex instruction sets, we add support for GPT 3.5 16k (AutoGPT itself does not support 3.5 16k yet), we cleaned up the interface and added support for mobile.
 
-[![Demo Video](https://img.youtube.com/vi/7Z7V03psycI/0.jpg)](https://www.youtube.com/watch?v=7Z7V03psycI)
+Release 1.1: Desktop Interface
+![Release 1.1 Desktop interface](https://github.com/neuronic-ai/autogpt-ui/blob/main/nai-autogpt-v1-1.png)
 
 
-### Table of Contents
-1. [About the Project](#about-the-project)
-2. [Features](#features)
-3. [Upcoming Features](#upcoming-features)
-4. [Installation](#installation)
-5. [Contributing](#contributing)
+Release 1.1: Mobile Interface
+![Release 1.1 Mobile interface](https://github.com/neuronic-ai/autogpt-ui/blob/main/nai-autogpt-mobile-v1-1.png)
+
 
 
 ## About the Project
@@ -31,6 +47,32 @@ AutoGPT has fantastic potential that was locked behind a command-line interface,
 Because (#1) setting up AutoGPT correctly can sometimes be difficult with various version conflicts and dependencies issues, and (#2) because how fast AutoGPT is changing which creates the potential need to re-factor or re-base code between releases, we embed a specific version of AutoGPT along with all of its dependencies and appropriately versioned stacks to support normal operation with our GUI.  The initial opensource release 1.0 is built on top of AutoGPT Stable 0.4.0.
 
 ## Features
+We have released 1.0 to the public and we are working on release 1.1 now and will be performing extensive testing to ensure that 1.1 is a near produciton ready software.
+
+#### Release 1.0:
+- Built on AutoGPT 0.4.0
+- Desktop graphical interface for AutoGPT
+- User specified AI_settings File
+- Resume stopped processes where we left off
+- Set fast and smart engine
+- Set max tokens for smart and fast engine
+- Set image size for Dalle image generation
+- Semi-Continuous mode with batch authorization interface
+- Workspace management with support for single file/directory or batch upload, download and delete
+- Workspace file preview for major file tyes and best effort syntax highlighting
+- Containerized with API backend, worker and frontend along with supporting containers
+
+#### Release 1.1:
+ - Built on AutoGPT 0.4.0
+ - Supports everything that Release1.0 supports except for the resume funciton
+ - Support for Rapid Tasks: Execute a single tasks in a rapid manner without any hassle.
+ - Plugins: Add more functionalities to your interface with an array of popular plugins support
+ - Updated Desktop interface: We level up the UI/UX some
+ - Mobile Interfaces: Take your AI assistant anywhere with a powerful mobile interface.
+ - Support for GPT 3.5 16k
+ - Max Tokens: A lot more max token options now
+ - File size in workspace management
+
 
 ## AI Settings File
 
@@ -40,26 +82,15 @@ The standard format for instructions includes a name, a role, a set of goals eac
 
 ------------------------
 
-# Fast and Smart Engines
+## Fast and Smart Engines
 
 :steam_locomotive: With our interface, you can choose the language model for your fast and smart engines. AutoGPT designed the fast model to handle the AI agent processing, and the smart model to handle the actual tasks the AI agent performs. 
 
-Note that GPT3.5 can only handle up to 4000 tokens maximum, and GPT-4 max tokens is based on which version of GPT-4 you have access to (8k or 32k). You can use 3.5 for both or GPT-4 for both.
+Note that GPT3.5 can only handle up to 4000 tokens maximum (release 1.1 will support 3.5 16k) and GPT-4 max tokens is based on which version of GPT-4 you have access to (8k or 32k). You can use 3.5 for both or GPT-4 for both.
 
 ## Workspace Management
 
  💼 With the workspace management interface, you can view, download, or delete any files that are generated, along with uploading files for AutoGPT to work with. Preview support for most readable file types, best effort syntax highlighting, multi-directory support.
-
-## Upcoming Features
-
-:arrow_upper_right: We are constantly working on adding more features to make your experience even better. The next version will include:
-
-1. **Support for Rapid Tasks**: Execute tasks in a rapid manner without any hassle.
-2. **Plugins**: Add more functionalities to your interface.
-3. **Mobile Interfaces**: Take your AI assistant anywhere with our mobile interface.
-3. **Updates to max token handling**: More ways to prevent token overruns and budget overruns.
-
-Stay tuned for these amazing features. We are excited to see what you will build with this!
 
 
 ## Installation
@@ -73,25 +104,30 @@ Stay tuned for these amazing features. We are excited to see what you will build
 - mysql: Necessary for multi-user support
 - redis: Used for maintaining job state
 
+The app will be exposed at port 8160
+
+(See video tutorial in the demo and tutorial section)
+
+1. Install Ubuntu server (18 or newer)
+2. Install build-essential (sudo apt install build-essential)
+3. Install Docker and Docker-Compose (See how-to-docker.txt file)
+4. Clone the repo down to your local machine
+5. create .env,  env-frontend.env, env-backend.env and env-mysql.env files (use examples and/or env-guidance.txt for help)
+6. Build the app with "sudo make all"
+7. Check that all your containers are up with "docker ps -a" (If container(s) are down check their logs for an indication why "docker logs container_name_or_id")
+8. Connect with your browser on port 8160. If installed on your local machine "https://localhost:8160 or otherwise use the IP of the machine its installed on
+
+-------------------
+
 Environment variables
-Copy config files
+Copy config files or create new ones using env-guidance
 
 - cp .env.example .env 
 - cp env-backend.example.env env-backend.env 
 - cp env-frontend.example.env env-frontend.env 
 - cp env-mysql.example.env env-mysql.env 
 
-
-#Copy the examples and set your env files up before building
-
-Docker
-Build and Deploy:
-
-make all
-
-
-The app will be exposed at port 8160
-
+--------------------
 
 ## Contributing 
 🤝 This project exists thanks to all the people who contribute. Big shout out to:
