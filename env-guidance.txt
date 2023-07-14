@@ -43,6 +43,43 @@ DATABASE_URL= (See example above, that is if you are using the mysql container w
 # Redis is used for enabling users to stop a job and then start it off where they left off, you can use local redis we add container for using the below
 REDIS_URL=redis://redis:6379/0 
 
+---------------
+#Configure permissions and plugins
+#Plugins require API keys or configuration information such as email details
+#For full access, do not modify the allow and deny sections.
+----------------
+# Allow only These plugins (If you have plugins configured): AutoGPTApiTools, AutoGPT_Slack, AutoGPTSceneXPlugin, AutoGPT_YouTube, AutoGPTTwitter, PlannerPlugin, AutoGPTEmailPlugin
+ALLOWLISTED_PLUGINS=AutoGPTApiTools, AutoGPT_Slack, AutoGPTSceneXPlugin, AutoGPT_YouTube, AutoGPTTwitter, PlannerPlugin, AutoGPTEmailPlugin
+
+#This is luike you would configure any email client
+EMAIL_ADDRESS=
+EMAIL_PASSWORD=
+EMAIL_SMTP_HOST=
+EMAIL_SMTP_PORT=587
+EMAIL_IMAP_SERVER=
+EMAIL_MARK_AS_SEEN=0
+EMAIL_SIGNATURE=This was sent by Auto-GPT
+EMAIL_DRAFT_MODE_WITH_FOLDER=[Gmail]/Drafts
+
+# For Twitter plugin
+TW_CONSUMER_KEY=
+TW_CONSUMER_SECRET=
+TW_ACCESS_TOKEN=
+TW_ACCESS_TOKEN_SECRET=
+TW_CLIENT_ID=
+TW_CLIENT_ID_SECRET=
+
+# For SceneX plugin
+SCENEX_API_KEY=
+
+# For Slack plugin
+SLACK_BOT_TOKEN=
+SLACK_CHANNEL=
+
+# For Youtube plugin
+YOUTUBE_API_KEY=
+
+
 ::::::::::::::
 env-frontend.env
 ::::::::::::::
@@ -54,3 +91,5 @@ env-mysql.env
 ::::::::::::::
 MYSQL_ROOT_PASSWORD=(You set this to what you want)
 MYSQL_DATABASE=autogpt (If you change this, make sure you update your mysql connection string)
+
+
