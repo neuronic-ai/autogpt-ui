@@ -1,14 +1,15 @@
-import { LLMEngine, ImageSize, FastTokens, SmartTokens } from '@/interfaces/enums';
+import { LLMEngine, ImageSize, GPT3_5Tokens, GPT4Tokens } from '@/interfaces/enums';
 
 export interface AiSettingsSchema {
   ai_goals: string[];
   ai_name: string;
   ai_role: string;
+  api_budget?: number | null;
 }
 
 export interface BaseBotSchema {
-  smart_tokens: SmartTokens;
-  fast_tokens: FastTokens;
+  smart_tokens: GPT4Tokens;
+  fast_tokens: GPT3_5Tokens;
   smart_engine: LLMEngine;
   fast_engine: LLMEngine;
   image_size: ImageSize;
@@ -26,13 +27,16 @@ export interface BotSchema extends BaseBotSchema {
   runs_left: number;
 }
 
-export interface BotFormSchema extends BaseBotSchema {}
+export interface BotFormSchema extends BaseBotSchema {
+  ai_goal: string;
+}
 
 export interface WorkspaceFileSchema {
   name: string;
   path: string;
   is_dir: boolean;
   mime_type: string | null;
+  size: string | null;
 }
 
 export interface WorkspaceFileEnrichedSchema extends WorkspaceFileSchema {

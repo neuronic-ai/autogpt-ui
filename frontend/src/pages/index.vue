@@ -3,79 +3,289 @@
     <template #description>Loading Form</template>
     <n-dialog-provider>
       <NSpace vertical :size="12">
-        <NCard size="huge" :bordered="false">
+        <n-card :size="`${viewport.isGreaterOrEquals('md') ? 'huge' : 'small'}`" :bordered="false">
           <template #header>
-            <n-text style="display: flex; align-items: center">
-              <img src="@/public/logo.svg" height="40" alt="NLP" />
-              Auto-GPT
-            </n-text>
-          </template>
-          <n-form ref="formRef" :model="model" :rules="rules" :disabled="bot?.is_active">
-            <n-grid x-gap="12" y-gap="12" :cols="24" item-responsive responsive="screen">
-              <n-gi span="3">
-                <n-form-item label="Ai Settings:" path="ai_settings" rule-path="requiredAny">
-                  <n-upload :custom-request="parseAiSettings" :show-file-list="false">
-                    <n-button>Upload File</n-button>
-                    <n-tag v-if="model.ai_settings" size="small" round>
-                      {{ model.ai_settings.ai_name }}
-                    </n-tag>
-                  </n-upload>
-                </n-form-item>
+            <n-grid :cols="4">
+              <n-gi :span="3">
+                <n-text style="display: flex; align-items: center">
+                  <img src="@/public/logo.svg" height="40" alt="NLP" />
+                  Auto-GPT
+                </n-text>
               </n-gi>
-              <n-gi span="3">
-                <n-form-item label="Fast Engine:" path="fast_engine" rule-path="required">
-                  <n-select v-model:value="model.fast_engine" :options="llmEngineOptions"></n-select>
-                </n-form-item>
-              </n-gi>
-              <n-gi span="3">
-                <n-form-item label="Smart Engine:" path="smart_engine" rule-path="required">
-                  <n-select v-model:value="model.smart_engine" :options="llmEngineOptions"></n-select>
-                </n-form-item>
-              </n-gi>
-              <n-gi span="3">
-                <n-form-item label="Image Size:" path="image_size" rule-path="requiredNumber">
-                  <n-select v-model:value="model.image_size" :options="imageSizeOptions"></n-select>
-                </n-form-item>
-              </n-gi>
-              <n-gi span="3">
-                <n-form-item label="Fast Tokens:" path="fast_tokens" rule-path="requiredNumber">
-                  <n-select v-model:value="model.fast_tokens" :options="fastTokensOptions"></n-select>
-                </n-form-item>
-              </n-gi>
-              <n-gi span="3">
-                <n-form-item label="Smart Tokens:" path="smart_tokens" rule-path="requiredNumber">
-                  <n-select v-model:value="model.smart_tokens" :options="smartTokensOptions"></n-select>
-                </n-form-item>
-              </n-gi>
-              <n-gi span="4">
-                <n-space justify="end">
-                  <n-button type="error" :disabled="!(bot && bot.is_active)" @click="stop">Stop</n-button>
-                  <NButton type="success" :disabled="bot && bot.is_active" @click="submit">Start</NButton>
+              <n-gi v-if="!viewport.isGreaterOrEquals('md')">
+                <n-space align="end" justify="end">
+                  <n-button v-if="tab === 1" style="font-size: 36px" text @click="tab = 2">
+                    <n-icon>
+                      <document-edit24-regular></document-edit24-regular>
+                    </n-icon>
+                  </n-button>
+                  <n-button v-else style="font-size: 36px" text @click="tab = 1">
+                    <n-icon>
+                      <run24-regular></run24-regular>
+                    </n-icon>
+                  </n-button>
                 </n-space>
               </n-gi>
             </n-grid>
-            <n-grid x-gap="12" y-gap="12" :cols="4">
-              <n-gi span="3">
-                <log-viewer ref="logViewerRef" :log="log"></log-viewer>
+          </template>
+          <template v-if="viewport.isGreaterOrEquals('md') || tab === 1">
+            <n-form ref="formRef" :model="model" :rules="rules" :disabled="bot?.is_active">
+              <n-grid x-gap="12" y-gap="12" :cols="4" item-responsive responsive="screen">
+                <n-gi :style="`${viewport.isLessThan('md') ? 'height: 25vh' : ''}`" span="4 m:3">
+                  <n-space justify="center">
+                    <n-grid x-gap="12" y-gap="6" :cols="12" item-responsive responsive="screen">
+                      <n-gi style="order: 1" span="12 m:11">
+                        <n-grid :cols="4" item-responsive responsive="screen">
+                          <n-gi v-if="viewport.isGreaterOrEquals('md')" span="2">
+                            <div style="position: relative; width: 100%; height: 100%">
+                              <span style="position: absolute; bottom: 0; left: 0">
+                                Enter ONE AI Goal or upload an ai_settings file:
+                              </span>
+                            </div>
+                          </n-gi>
+                          <n-gi v-else span="1">
+                            <div style="position: relative; width: 100%; height: 100%">
+                              <span style="position: absolute; bottom: 0; left: 0">AI Goal:</span>
+                            </div>
+                          </n-gi>
+                          <n-gi span="3 m:2">
+                            <n-space justify="end">
+                              <n-form-item
+                                path="ai_settings"
+                                :rule="requiredIfNot('ai_goal')"
+                                :show-feedback="false"
+                                :show-label="false"
+                              >
+                                <n-upload :custom-request="parseAiSettings" :show-file-list="false">
+                                  <n-tag
+                                    v-if="model.ai_settings"
+                                    size="small"
+                                    closable
+                                    round
+                                    @close="model.ai_settings = null"
+                                  >
+                                    {{ model.ai_settings.ai_name }}
+                                  </n-tag>
+                                  <n-button>Upload File</n-button>
+                                </n-upload>
+                              </n-form-item>
+                            </n-space>
+                          </n-gi>
+                        </n-grid>
+                      </n-gi>
+                      <n-gi style="order: 2" span="12 m:11">
+                        <n-form-item
+                          path="ai_goal"
+                          :rule="requiredIfNot('ai_settings')"
+                          :show-feedback="false"
+                          :show-label="false"
+                        >
+                          <n-input v-model:value="model.ai_goal"></n-input>
+                        </n-form-item>
+                      </n-gi>
+                      <n-gi :style="`order: ${viewport.isGreaterOrEquals('md') ? 3 : 4}`" span="3 m:1">
+                        <n-button v-if="bot && bot.is_active" type="error" style="width: 100%" @click="stop">
+                          Stop
+                        </n-button>
+                        <n-button v-else type="success" style="width: 100%" @click="submit">Start</n-button>
+                      </n-gi>
+                      <n-gi :style="`order: ${viewport.isGreaterOrEquals('md') ? 4 : 3}`" span="9 m:11">
+                        <n-grid x-gap="12" y-gap="12" :cols="10" item-responsive responsive="screen">
+                          <n-gi span="6 m:2">
+                            <n-form-item label-placement="left" :show-feedback="false">
+                              <n-tooltip trigger="hover">
+                                <template #trigger>
+                                  <n-icon size="24px"><lightning /></n-icon>
+                                </template>
+                                Fast Engine
+                              </n-tooltip>
+                              <n-select v-model:value="model.fast_engine" :options="llmEngineOptions"></n-select>
+                            </n-form-item>
+                          </n-gi>
+                          <n-gi span="4 m:2">
+                            <n-select v-model:value="model.fast_tokens" :options="fastTokensOptions"></n-select>
+                          </n-gi>
+                          <n-gi span="6 m:2">
+                            <n-form-item label-placement="left" :show-feedback="false">
+                              <n-tooltip trigger="hover">
+                                <template #trigger>
+                                  <n-icon size="24px"><brain-circuit24-filled /></n-icon>
+                                </template>
+                                Smart Engine
+                              </n-tooltip>
+                              <n-select v-model:value="model.smart_engine" :options="llmEngineOptions"></n-select>
+                            </n-form-item>
+                          </n-gi>
+                          <n-gi span="4 m:2">
+                            <n-select v-model:value="model.smart_tokens" :options="smartTokensOptions"></n-select>
+                          </n-gi>
+                          <n-gi v-if="viewport.isGreaterOrEquals('md')" span="2">
+                            <n-form-item label-placement="left">
+                              <n-icon size="24px"><image-outline /></n-icon>
+                              <n-select v-model:value="model.image_size" :options="imageSizeOptions"></n-select>
+                            </n-form-item>
+                          </n-gi>
+                        </n-grid>
+                      </n-gi>
+                    </n-grid>
+                  </n-space>
+                </n-gi>
+                <n-gi v-if="viewport.isGreaterOrEquals('md')" span="1">
+                  <n-card title="Enabled plugins:">
+                    <n-space>
+                      <n-tag v-for="(item, i) of enabledPlugins" :key="i" size="small" round>
+                        {{ item }}
+                      </n-tag>
+                    </n-space>
+                  </n-card>
+                </n-gi>
+              </n-grid>
+              <n-grid x-gap="12" y-gap="12" :cols="4" item-responsive responsive="screen">
+                <n-gi span="4 m:3">
+                  <log-viewer ref="logViewerRef" :log="log"></log-viewer>
+                </n-gi>
+                <n-gi v-if="viewport.isGreaterOrEquals('md')" span="1">
+                  <n-list style="height: 160px">
+                    <n-list-item>
+                      <n-thing>
+                        <n-upload :custom-request="uploadWorkspaceFile" :show-file-list="false" multiple>
+                          <n-upload-dragger>
+                            <div style="margin-bottom: 12px">
+                              <n-icon size="48" :depth="3">
+                                <archive />
+                              </n-icon>
+                            </div>
+                            <n-text style="font-size: 16px">Click or drag a file to this area to upload</n-text>
+                          </n-upload-dragger>
+                        </n-upload>
+                      </n-thing>
+                    </n-list-item>
+                  </n-list>
+                  <n-list style="height: 440px; overflow: auto">
+                    <template v-if="workspacePath !== ''">
+                      <n-list-item
+                        style="cursor: pointer"
+                        @click="fetchWorkspaceFiles(workspacePath.split('/').slice(0, -1).join('/'))"
+                      >
+                        <n-thing :title="'/..'"></n-thing>
+                      </n-list-item>
+                    </template>
+                    <n-list-item
+                      v-for="(item, i) in workspaceFiles"
+                      :key="i"
+                      :style="`cursor: ${item.is_dir ? 'pointer' : 'auto'}`"
+                      @click="item.is_dir ? fetchWorkspaceFiles(item.path) : () => {}"
+                    >
+                      <n-grid :cols="3">
+                        <n-gi :span="2">
+                          <n-thing>
+                            <template #header>
+                              {{ `${item.is_dir ? '/' : ''}${item.name}` }}
+                              <template v-if="item.size">
+                                <span style="font-size: 10px; font-weight: normal">({{ item.size }})</span>
+                              </template>
+                            </template>
+                          </n-thing>
+                        </n-gi>
+                        <n-gi>
+                          <n-space justify="end">
+                            <n-button
+                              v-if="!item.is_dir && isPreviewSupported(item.name)"
+                              circle
+                              @click.stop="loadPreview(item.path)"
+                            >
+                              <template #icon>
+                                <n-icon>
+                                  <search />
+                                </n-icon>
+                              </template>
+                            </n-button>
+                            <n-button circle @click.stop="downloadFile(item.path)">
+                              <template #icon>
+                                <n-icon>
+                                  <download />
+                                </n-icon>
+                              </template>
+                            </n-button>
+                            <n-popconfirm
+                              v-model:show="item.show"
+                              @positive-click.stop="deleteWorkspaceFile(item.path)"
+                            >
+                              <template #trigger>
+                                <n-button circle type="error" @click.stop="item.show = !!item.show">
+                                  <template #icon>
+                                    <n-icon>
+                                      <close />
+                                    </n-icon>
+                                  </template>
+                                </n-button>
+                              </template>
+                              Are you sure you want to delete this file?
+                            </n-popconfirm>
+                          </n-space>
+                        </n-gi>
+                      </n-grid>
+                    </n-list-item>
+                  </n-list>
+                </n-gi>
+                <n-gi span="4 m:3">
+                  <n-grid v-if="bot && bot.is_active && bot.runs_left === 0" x-gap="12" y-gap="12" :cols="1">
+                    <n-gi>
+                      <n-space justify="center">
+                        <n-button type="error" @click="stop">No</n-button>
+                        <n-button type="success" @click="continueBot">Yes</n-button>
+                        <n-select v-model:value="yesCount" style="width: 100px" :options="yesCountOptions"></n-select>
+                      </n-space>
+                    </n-gi>
+                  </n-grid>
+                </n-gi>
+                <n-gi v-if="viewport.isGreaterOrEquals('md')" span="1">
+                  <n-grid x-gap="12" y-gap="12" :cols="2">
+                    <n-gi>
+                      <n-button style="width: 100%" type="info" @click="downloadFile()">Download all</n-button>
+                    </n-gi>
+                    <n-gi>
+                      <n-popconfirm @positive-click="clearWorkspace()">
+                        <template #trigger>
+                          <n-button style="width: 100%" type="warning">Clear</n-button>
+                        </template>
+                        Are you sure you want to clear ALL workspace files?
+                      </n-popconfirm>
+                    </n-gi>
+                  </n-grid>
+                </n-gi>
+              </n-grid>
+            </n-form>
+          </template>
+          <template v-else>
+            <n-grid :cols="1">
+              <n-gi>
+                <n-card style="height: 20vh; overflow: auto" title="Enabled plugins:">
+                  <n-space>
+                    <n-tag v-for="(item, i) of enabledPlugins" :key="i" size="small" round>
+                      {{ item }}
+                    </n-tag>
+                  </n-space>
+                </n-card>
               </n-gi>
-              <n-gi span="1">
-                <n-list style="height: 160px">
+              <n-gi>
+                <n-list style="height: 17vh">
                   <n-list-item>
                     <n-thing>
                       <n-upload :custom-request="uploadWorkspaceFile" :show-file-list="false" multiple>
                         <n-upload-dragger>
                           <div style="margin-bottom: 12px">
-                            <n-icon size="48" :depth="3">
+                            <n-icon size="24" :depth="3">
                               <archive />
                             </n-icon>
                           </div>
-                          <n-text style="font-size: 16px">Click or drag a file to this area to upload</n-text>
+                          <n-text style="font-size: 12px">Click or drag a file to this area to upload</n-text>
                         </n-upload-dragger>
                       </n-upload>
                     </n-thing>
                   </n-list-item>
                 </n-list>
-                <n-list style="height: 440px; overflow: auto">
+                <n-list style="height: 40vh; overflow: auto; margin-bottom: 10px">
                   <template v-if="workspacePath !== ''">
                     <n-list-item
                       style="cursor: pointer"
@@ -92,13 +302,21 @@
                   >
                     <n-grid :cols="3">
                       <n-gi :span="2">
-                        <n-thing :title="`${item.is_dir ? '/' : ''}${item.name}`"></n-thing>
+                        <n-thing>
+                          <template #header>
+                            {{ `${item.is_dir ? '/' : ''}${item.name}` }}
+                            <template v-if="item.size">
+                              <span style="font-size: 10px; font-weight: normal">({{ item.size }})</span>
+                            </template>
+                          </template>
+                        </n-thing>
                       </n-gi>
                       <n-gi>
-                        <n-space justify="center">
+                        <n-space justify="end">
                           <n-button
                             v-if="!item.is_dir && isPreviewSupported(item.name)"
                             circle
+                            size="small"
                             @click.stop="loadPreview(item.path)"
                           >
                             <template #icon>
@@ -107,7 +325,7 @@
                               </n-icon>
                             </template>
                           </n-button>
-                          <n-button circle @click.stop="downloadFile(item.path)">
+                          <n-button circle size="small" @click.stop="downloadFile(item.path)">
                             <template #icon>
                               <n-icon>
                                 <download />
@@ -116,7 +334,7 @@
                           </n-button>
                           <n-popconfirm v-model:show="item.show" @positive-click.stop="deleteWorkspaceFile(item.path)">
                             <template #trigger>
-                              <n-button circle type="error" @click.stop="item.show = !!item.show">
+                              <n-button circle type="error" size="small" @click.stop="item.show = !!item.show">
                                 <template #icon>
                                   <n-icon>
                                     <close />
@@ -131,17 +349,6 @@
                     </n-grid>
                   </n-list-item>
                 </n-list>
-              </n-gi>
-              <n-gi span="3">
-                <n-grid v-if="bot && bot.is_active && bot.runs_left === 0" x-gap="12" y-gap="12" :cols="1">
-                  <n-gi>
-                    <n-space justify="center">
-                      <n-button type="error" @click="stop">No</n-button>
-                      <n-button type="success" @click="continueBot">Yes</n-button>
-                      <n-select v-model:value="yesCount" style="width: 100px" :options="yesCountOptions"></n-select>
-                    </n-space>
-                  </n-gi>
-                </n-grid>
               </n-gi>
               <n-gi>
                 <n-grid x-gap="12" y-gap="12" :cols="2">
@@ -159,18 +366,29 @@
                 </n-grid>
               </n-gi>
             </n-grid>
-          </n-form>
-        </NCard>
+          </template>
+        </n-card>
       </NSpace>
       <n-modal v-model:show="previewConfig.show" :on-update:show="closePreview" display-directive="show">
         <n-card
           style="max-width: 1000px"
-          :title="`Preview: ${previewConfig.name}`"
           :bordered="false"
-          size="huge"
+          :size="`${viewport.isGreaterOrEquals('md') ? 'huge' : 'medium'}`"
           role="dialog"
           aria-modal="true"
         >
+          <template #header-extra>
+            <n-button text @click="previewConfig.show = false">
+              <n-icon size="18px">
+                <close />
+              </n-icon>
+            </n-button>
+          </template>
+          <template #header>
+            <span>
+              {{ `Preview: ${previewConfig.name}` }}
+            </span>
+          </template>
           <pre v-if="!!previewConfig.text"><code v-html='previewConfig.text'></code></pre>
           <img
             v-else-if="!!previewConfig.imageURL"
@@ -185,32 +403,42 @@
 </template>
 
 <script setup lang="ts">
-import { FormInst, FormRules, useNotification, UploadCustomRequestOptions, FormItemRule } from 'naive-ui';
+import { FormInst, FormItemRule, FormRules, UploadCustomRequestOptions, useNotification } from 'naive-ui';
 import hljs from 'highlight.js';
-import { cloneDeep, last, isPlainObject, isArray } from 'lodash-es';
-import { Archive, Download, Close, Search } from '@vicons/ionicons5';
+import { cloneDeep, isArray, isPlainObject, last } from 'lodash-es';
+import { Archive, Close, Download, ImageOutline, Search } from '@vicons/ionicons5';
+import { Lightning } from '@vicons/carbon';
+import { BrainCircuit24Filled, DocumentEdit24Regular, Run24Regular } from '@vicons/fluent';
 import {
-  BotSchema,
+  AiSettingsSchema,
   BotFormSchema,
-  SmartTokens,
-  LLMEngine,
-  FastTokens,
+  BotSchema,
+  GPT35Tokens,
+  GPT4Tokens,
+  gpt35TokensOptions,
+  gpt4TokensOptions,
   ImageSize,
-  llmEngineOptions,
   imageSizeOptions,
-  fastTokensOptions,
-  smartTokensOptions,
-  yesCountOptions,
+  LLMEngine,
+  llmEngineOptions,
   WorkspaceFileEnrichedSchema,
+  yesCountOptions,
 } from '@/interfaces/';
 import LogViewer from '@/components/LogViewer.vue';
 
+const oneName = 'single goal';
+const oneRole =
+  'You are a powerful GPT Agent that will work to achieve any goal you are tasked with provided it is not illegal or unethical';
+
 const notify = useNotification();
+const viewport = useViewport();
+const tab = ref(1);
 
 const loading = ref(false);
 const bot: Ref<BotSchema | null> = ref(null);
 const log = ref('');
 const yesCount: Ref<number> = ref(5);
+const enabledPlugins: Ref<string[]> = ref([]);
 const workspaceFiles: Ref<WorkspaceFileEnrichedSchema[]> = ref([]);
 const apiManager = useApiManager();
 const config = useRuntimeConfig();
@@ -232,7 +460,6 @@ const rules: FormRules = {
       }
       return true;
     },
-    type: 'number',
   },
   requiredNumber: {
     required: true,
@@ -243,16 +470,45 @@ const rules: FormRules = {
 
 const formRef = ref<FormInst | null>(null);
 const value: BotFormSchema = {
-  smart_tokens: SmartTokens.t8000,
-  fast_tokens: FastTokens.t4000,
+  smart_tokens: GPT4Tokens.t8000,
+  fast_tokens: GPT35Tokens.t4000,
   smart_engine: LLMEngine.GPT_4,
   fast_engine: LLMEngine.GPT_3_5_TURBO,
   image_size: ImageSize.s512,
   ai_settings: null,
+  ai_goal: '',
 };
 const model = ref(value);
 const logViewerRef = ref<LogViewer | null>(null);
 const workspacePath: Ref<string> = ref('');
+
+function requiredIfNot(field: keyof BotFormSchema): FormItemRule {
+  return {
+    validator(rule: FormItemRule, value: string) {
+      if (!value && !model.value[field]) {
+        // @ts-ignore
+        return new Error(`${rule.field} is required`);
+      }
+      return true;
+    },
+  };
+}
+
+const fastTokensOptions = computed(() => {
+  if (model.value.fast_engine === LLMEngine.GPT_3_5_TURBO) {
+    return gpt35TokensOptions;
+  } else {
+    return gpt4TokensOptions;
+  }
+});
+
+const smartTokensOptions = computed(() => {
+  if (model.value.smart_engine === LLMEngine.GPT_3_5_TURBO) {
+    return gpt35TokensOptions;
+  } else {
+    return gpt4TokensOptions;
+  }
+});
 
 async function stop(e?: MouseEvent) {
   if (e) {
@@ -365,6 +621,7 @@ function isPreviewSupported(name: string) {
     'gif',
     'py',
     'json',
+    'sh',
     'yaml',
     'toml',
   ].includes(last(name.toLowerCase().split('.'))!);
@@ -383,13 +640,22 @@ function submit(e: MouseEvent) {
         return false;
       }
       notify.destroyAll();
+      let aiSettings = model.value.ai_settings;
+      if (!aiSettings) {
+        aiSettings = {
+          ai_name: oneName,
+          ai_role: oneRole,
+          ai_goals: [model.value.ai_goal],
+          api_budget: 3,
+        };
+      }
       bot.value = await apiManager.putBot({
         image_size: model.value.image_size,
         smart_engine: model.value.smart_engine,
         smart_tokens: model.value.smart_tokens,
         fast_engine: model.value.fast_engine,
         fast_tokens: model.value.fast_tokens,
-        ai_settings: model.value.ai_settings!,
+        ai_settings: aiSettings,
       });
     }
   });
@@ -423,7 +689,16 @@ onMounted(async () => {
   const botFromDb = await apiManager.getBot();
   bot.value = botFromDb;
   if (botFromDb) {
-    model.value = mergeKeepShape(model.value, botFromDb);
+    let aiGoal = '';
+    let aiSettings: AiSettingsSchema | null = cloneDeep(botFromDb.ai_settings);
+    if (botFromDb.ai_settings) {
+      if (botFromDb.ai_settings.ai_name === oneName && botFromDb.ai_settings.ai_role === oneRole) {
+        aiGoal = botFromDb.ai_settings.ai_goals[0];
+        aiSettings = null;
+      }
+    }
+    model.value = mergeKeepShape(model.value, { ...botFromDb, ai_goal: aiGoal });
+    model.value.ai_settings = aiSettings;
     if (!botFromDb.is_active) {
       if (botFromDb.is_failed) {
         notify.error({
@@ -437,6 +712,7 @@ onMounted(async () => {
     }
     log.value = await apiManager.getBotLog();
   }
+  enabledPlugins.value = await apiManager.getEnabledPlugins();
   await fetchWorkspaceFiles(workspacePath.value);
   loading.value = false;
   setInterval(reFetch, 5000);

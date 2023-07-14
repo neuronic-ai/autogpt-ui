@@ -1,10 +1,9 @@
+import json
 from colorama import Fore, Style
 
 from autogpt.agent.agent import Agent
 from autogpt.app import execute_command, get_command
-from autogpt.config import Config
-from autogpt.json_utils.json_fix_llm import fix_json_using_multiple_techniques
-from autogpt.json_utils.utilities import LLM_DEFAULT_RESPONSE_FORMAT, validate_json
+from autogpt.json_utils.utilities import validate_json
 from autogpt.llm.chat import chat_with_ai
 from autogpt.llm.utils import count_string_tokens
 from autogpt.log_cycle.log_cycle import (
@@ -15,11 +14,11 @@ from autogpt.logs import logger, print_assistant_thoughts
 from autogpt.speech import say_text
 from autogpt.spinner import Spinner
 
+from app.auto_gpt.utilities import extract_json_from_response
+
 
 class AgentStandalone(Agent):
     def execute_command(self, command_name: str, arguments: dict, user_input: str):
-        cfg = Config()
-
         # Execute command
         if command_name is not None and command_name.lower().startswith("error"):
             result = f"Could not execute command: {arguments}"
@@ -28,26 +27,24 @@ class AgentStandalone(Agent):
         elif command_name == "self_feedback":
             result = f"Self feedback: {user_input}"
         else:
-            for plugin in cfg.plugins:
+            for plugin in self.config.plugins:
                 if not plugin.can_handle_pre_command():
                     continue
                 command_name, arguments = plugin.pre_command(command_name, arguments)
             command_result = execute_command(
-                self.command_registry,
-                command_name,
-                arguments,
-                self.config.prompt_generator,
-                config=cfg,
+                command_name=command_name,
+                arguments=arguments,
+                agent=self,
             )
             result = f"Command {command_name} returned: " f"{command_result}"
 
-            result_tlength = count_string_tokens(str(command_result), cfg.fast_llm_model)
-            memory_tlength = count_string_tokens(str(self.history.summary_message()), cfg.fast_llm_model)
-            if result_tlength + memory_tlength + 600 > cfg.fast_token_limit:
+            result_tlength = count_string_tokens(str(command_result), self.config.fast_llm_model)
+            memory_tlength = count_string_tokens(str(self.history.summary_message()), self.config.fast_llm_model)
+            if result_tlength + memory_tlength + 600 > self.fast_token_limit:
                 result = f"Failure: command {command_name} returned too much output. \
                     Do not execute this command again with the same arguments."
 
-            for plugin in cfg.plugins:
+            for plugin in self.config.plugins:
                 if not plugin.can_handle_post_command():
                     continue
                 result = plugin.post_command(command_name, result)
@@ -64,7 +61,6 @@ class AgentStandalone(Agent):
             logger.typewriter_log("SYSTEM: ", Fore.YELLOW, "Unable to execute command")
 
     def process_next_interaction(self, last_assistant_reply: str | None):
-        cfg = Config()
         self.cycle_count = 0
         command_name = None
         arguments = None
@@ -72,7 +68,7 @@ class AgentStandalone(Agent):
         self.cycle_count += 1
         self.log_cycle_handler.log_count_within_cycle = 0
         self.log_cycle_handler.log_cycle(
-            self.config.ai_name,
+            self.ai_config.ai_name,
             self.created_at,
             self.cycle_count,
             [m.raw() for m in self.history],
@@ -82,33 +78,38 @@ class AgentStandalone(Agent):
         # Send message to AI, get response
         if not last_assistant_reply:
             # Send message to AI, get response
-            with Spinner("Thinking... ", plain_output=cfg.plain_output):
+            with Spinner("Thinking... ", plain_output=self.config.plain_output):
                 assistant_reply = chat_with_ai(
-                    cfg,
+                    self.config,
                     self,
                     self.system_prompt,
                     self.triggering_prompt,
-                    cfg.fast_token_limit,
-                    cfg.fast_llm_model,
+                    self.fast_token_limit,
+                    self.config.fast_llm_model,
                 )
         else:
             assistant_reply = last_assistant_reply
 
-        assistant_reply_json = fix_json_using_multiple_techniques(assistant_reply)
-        for plugin in cfg.plugins:
+        try:
+            assistant_reply_json = extract_json_from_response(assistant_reply)
+            validate_json(assistant_reply_json)
+        except json.JSONDecodeError as e:
+            logger.error(f"Exception while validating assistant reply JSON: {e}")
+            assistant_reply_json = {}
+
+        for plugin in self.config.plugins:
             if not plugin.can_handle_post_planning():
                 continue
             assistant_reply_json = plugin.post_planning(assistant_reply_json)
 
         # Print Assistant thoughts
         if assistant_reply_json != {}:
-            validate_json(assistant_reply_json, LLM_DEFAULT_RESPONSE_FORMAT)
             # Get command name and arguments
             try:
                 if not last_assistant_reply:
-                    print_assistant_thoughts(self.ai_name, assistant_reply_json, cfg.speak_mode)
+                    print_assistant_thoughts(self.ai_name, assistant_reply_json, self.config.speak_mode)
                 command_name, arguments = get_command(assistant_reply_json)
-                if cfg.speak_mode:
+                if self.config.speak_mode:
                     say_text(f"I want to execute {command_name}")
 
                 arguments = self._resolve_pathlike_command_args(arguments)
@@ -116,7 +117,7 @@ class AgentStandalone(Agent):
             except Exception as e:
                 logger.error("Error: \n", str(e))
         self.log_cycle_handler.log_cycle(
-            self.config.ai_name,
+            self.ai_config.ai_name,
             self.created_at,
             self.cycle_count,
             assistant_reply_json,
@@ -127,7 +128,6 @@ class AgentStandalone(Agent):
             # ### GET USER AUTHORIZATION TO EXECUTE COMMAND ###
             # Get key press: Prompt the user to press enter to continue or escape
             # to exit
-            self.user_input = ""
             logger.typewriter_log(
                 "NEXT ACTION: ",
                 Fore.CYAN,

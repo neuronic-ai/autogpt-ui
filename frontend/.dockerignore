@@ -1,0 +1,20 @@
+node_modules
+*.log*
+.nuxt
+.nitro
+.cache
+.output
+dist
+
+# User-specific stuff
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/shelf
+.vscode
+
+# .idea should not be in git
+.idea/
+
+db

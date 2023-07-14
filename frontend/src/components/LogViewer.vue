@@ -36,7 +36,7 @@ watch(html, (newValue, oldValue) => {
   /*background-color: black;*/
   /*color: #fff;*/
   overflow: auto;
-  white-space: pre;
-  max-height: 600px;
+  white-space: pre-wrap;
+  height: 50vh;
 }
 </style>

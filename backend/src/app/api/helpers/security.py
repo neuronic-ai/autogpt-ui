@@ -16,6 +16,12 @@ class AuthDependency(ABC):
     async def __call__(self, *args, **kwargs) -> User:
         pass
 
+    @classmethod
+    def cast(cls, some_a: "AuthDependency"):
+        """Cast an A into a MyA."""
+        some_a.__class__ = cls
+        return some_a
+
     def raise_401(self, detail: str = BAD_CREDENTIALS_MSG) -> NoReturn:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=detail)
 

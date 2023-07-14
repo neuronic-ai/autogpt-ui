@@ -229,29 +229,34 @@ async def run(ctx, bot_id: int):
         openai_key = settings.OPENAI_LOCAL_KEY
     else:
         openai_key = (await auth_client.get_user(RequestType.userdata, username=user.username))["openai"]
-    disabled_command_categories = []
-    if not settings.ALLOW_CODE_EXECUTION:
-        disabled_command_categories.append("autogpt.commands.execute_code")
+    env = {
+        "OPENAI_API_KEY": openai_key,
+        "FAST_TOKEN_LIMIT": str(bot.fast_tokens),
+        "SMART_TOKEN_LIMIT": str(bot.smart_tokens),
+        "FAST_LLM_MODEL": bot.fast_engine,
+        "SMART_LLM_MODEL": bot.smart_engine,
+        "IMAGE_SIZE": str(bot.image_size),
+        "USE_WEB_BROWSER": "firefox",
+        "PYTHONPATH": os.environ.get("PYTHONPATH"),
+        "PATH": os.environ.get("PATH"),
+        "WDM_PROGRESS_BAR": "0",
+    }
+    for k, f in settings.__fields__.items():
+        if not f.field_info.extra.get("auto_gpt"):
+            continue
+        value = getattr(settings, k)
+        if value is None:
+            value = ""
+        elif isinstance(value, list):
+            value = ",".join(value)
+        else:
+            value = str(value)
+        env[k] = value
     proc = await asyncio.create_subprocess_shell(
         build_command(bot),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
-        env={
-            "OPENAI_API_KEY": openai_key,
-            "FAST_TOKEN_LIMIT": str(bot.fast_tokens),
-            "SMART_TOKEN_LIMIT": str(bot.smart_tokens),
-            "FAST_LLM_MODEL": bot.fast_engine,
-            "SMART_LLM_MODEL": bot.smart_engine,
-            "IMAGE_SIZE": str(bot.image_size),
-            "USE_WEB_BROWSER": "firefox",
-            "PYTHONPATH": os.environ.get("PYTHONPATH"),
-            "PATH": os.environ.get("PATH"),
-            "WDM_PROGRESS_BAR": "0",
-            "EXECUTE_LOCAL_COMMANDS": str(settings.EXECUTE_LOCAL_COMMANDS),
-            "DISABLED_COMMAND_CATEGORIES": ",".join(disabled_command_categories),
-            "DENY_COMMANDS": ",".join(settings.DENY_COMMANDS),
-            "ALLOW_COMMANDS": ",".join(settings.ALLOW_COMMANDS),
-        },
+        env=env,
     )
     log_path = build_log_path(bot.user_id)
     ExtendedStreamReader.cast(proc.stdout)

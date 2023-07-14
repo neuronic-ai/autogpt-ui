@@ -1,6 +1,8 @@
 export enum LLMEngine {
   GPT_3_5_TURBO = 'gpt-3.5-turbo',
+  GPT_3_5_TURBO_16K = 'gpt-3.5-turbo-16k',
   GPT_4 = 'gpt-4',
+  GPT_4_32K = 'gpt-4-32k',
 }
 
 export enum ImageSize {
@@ -8,14 +10,14 @@ export enum ImageSize {
   s1024 = 1024,
 }
 
-export enum FastTokens {
+export enum GPT35Tokens {
   t1000 = 1000,
   t2000 = 2000,
   t3000 = 3000,
   t4000 = 4000,
 }
 
-export enum SmartTokens {
+export enum GPT4Tokens {
   t2000 = 2000,
   t4000 = 4000,
   t8000 = 8000,

@@ -3,7 +3,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 from prisma.partials import BotInCreateSchema as _BotInCreateSchema, BotSchema as _BotSchema
 
-from app.schemas.enums import ImageSize, SmartTokens, FastTokens, LLMEngine
+from app.schemas.enums import ImageSize, EngineTokens, LLMEngine
 
 
 class AiSettingsSchema(BaseModel):
@@ -20,8 +20,8 @@ class BotSchema(_BotSchema):
 class BotInCreateSchema(_BotInCreateSchema):
     fast_engine: LLMEngine = LLMEngine.GPT_3_5_TURBO
     smart_engine: LLMEngine = LLMEngine.GPT_4
-    fast_tokens: FastTokens = FastTokens.t4000
-    smart_tokens: SmartTokens = SmartTokens.t4000
+    fast_tokens: EngineTokens = EngineTokens.t4000
+    smart_tokens: EngineTokens = EngineTokens.t4000
     image_size: ImageSize = ImageSize.s512
     ai_settings: AiSettingsSchema
 
@@ -31,3 +31,4 @@ class WorkspaceFileSchema(BaseModel):
     path: str
     is_dir: bool
     mime_type: str | None = None
+    size: str | None = None

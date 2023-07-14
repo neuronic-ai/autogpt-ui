@@ -17,7 +17,6 @@ from autogpt.config import Config, check_openai_api_key
 from autogpt.configurator import create_config
 from autogpt.logs import logger
 from autogpt.memory.vector import get_memory
-from autogpt.plugins import scan_plugins
 from autogpt.prompts.prompt import DEFAULT_TRIGGERING_PROMPT
 from autogpt.utils import get_current_git_branch, get_latest_bulletin, markdown_to_ansi_style
 from autogpt.workspace import Workspace
@@ -26,6 +25,7 @@ from app.auto_gpt.api_manager import CachedApiManager
 from app.auto_gpt.agent import AgentStandalone
 from app.auto_gpt.install_plugin_deps import install_plugin_dependencies
 from app.auto_gpt.memory import CachedAgents, CachedMessageHistory
+from app.auto_gpt.plugins import scan_plugins
 
 
 COMMAND_CATEGORIES = [
@@ -223,17 +223,7 @@ def run_auto_gpt(
     for command_category in enabled_command_categories:
         command_registry.import_commands(command_category)
 
-    agent = AgentStandalone(
-        ai_name=None,
-        memory=None,
-        next_action_count=0,
-        command_registry=command_registry,
-        config=None,
-        system_prompt=None,
-        triggering_prompt=DEFAULT_TRIGGERING_PROMPT,
-        workspace_directory=workspace_directory,
-    )
-    message_history = CachedMessageHistory(agent)
+    message_history = CachedMessageHistory(None)
     while message_history.filename.stat().st_size >= max_cache_size:
         logger.typewriter_log("Truncating cache...")
         message_history.messages[:] = message_history.messages[(len(message_history.messages) // 4) or 1 :]
@@ -273,9 +263,17 @@ def run_auto_gpt(
     if cfg.debug_mode:
         logger.typewriter_log("Prompt:", Fore.GREEN, system_prompt)
 
-    agent.ai_name = ai_name
-    agent.config = ai_config
+    agent = AgentStandalone(
+        ai_name=ai_name,
+        memory=memory,
+        next_action_count=0,
+        command_registry=command_registry,
+        ai_config=ai_config,
+        config=cfg,
+        system_prompt=system_prompt,
+        triggering_prompt=DEFAULT_TRIGGERING_PROMPT,
+        workspace_directory=workspace_directory,
+    )
+    message_history.agent = agent
     agent.history = message_history
-    agent.memory = memory
-    agent.system_prompt = system_prompt
     agent.process_next_interaction(last_assistant_reply)

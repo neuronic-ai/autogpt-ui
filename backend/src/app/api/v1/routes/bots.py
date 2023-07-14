@@ -1,4 +1,3 @@
-import json
 import magic
 import os
 import shutil
@@ -24,7 +23,7 @@ from app.schemas.enums import YesCount
 
 
 CHUNK_SIZE = 1024 * 1024
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(security.check_user)])
 
 
 @router.post("/", response_model=BotSchema)
@@ -46,11 +45,8 @@ async def save_bot(*, bot_in: BotInCreateSchema, user: User = Depends(security.c
             "runs_left": 1,
         }
     )
-    if not existing_bot or json.dumps(existing_bot.ai_settings, sort_keys=True) != bot_in.ai_settings.json(
-        sort_keys=True
-    ):
-        bots.clear_workspace_cache(user.id)
-        bots.build_log_path(user.id).unlink(missing_ok=True)
+    bots.clear_workspace_cache(user.id)
+    bots.build_log_path(user.id).unlink(missing_ok=True)
     job = await globals.arq_redis.enqueue_job("run_auto_gpt", bot_id=bot.id)
     await Bot.prisma().update(data={"worker_message_id": job.job_id}, where={"id": bot.id})
     return bot.dict()
@@ -66,8 +62,13 @@ async def delete_bot(bot: Bot = Depends(bots.get_bot)):
     await bots.delete_bot(bot)
 
 
+@router.get("/enabled-plugins", response_class=ORJSONResponse, response_model=list[str])
+async def get_enabled_plugins():
+    return settings.ALLOWLISTED_PLUGINS
+
+
 @router.post("/parse-settings", response_class=ORJSONResponse, response_model=AiSettingsSchema)
-async def parse_ai_settings(*, file: UploadFile, _: User = Depends(security.check_user)):
+async def parse_ai_settings(*, file: UploadFile):
     real_file_size = 0
     settings_content = b""
     while content := await file.read(CHUNK_SIZE):
@@ -153,12 +154,18 @@ async def list_workspace_files(*, path: str | None = None, user: User = Depends(
         if GPT_CACHE in f.parts:
             continue
         is_dir = f.is_dir()
+        st_size = f.stat().st_size
+        if st_size:
+            size = filesize.naturalsize(st_size)
+        else:
+            size = None
         files.append(
             WorkspaceFileSchema(
                 name=str(f.name),
                 path=str(f.relative_to(workspace_path)),
                 is_dir=is_dir,
                 mime_type=magic.from_file(f, mime=True) if not is_dir else None,
+                size=size,
             )
         )
     return files

@@ -13,6 +13,7 @@ import {
 interface ApiManager {
   putBot(v: BotInCreateSchema): Promise<BotSchema | null>;
   getBot(): Promise<BotSchema | null>;
+  getEnabledPlugins(): Promise<string[]>;
   listWorkspaceFiles(path?: string | null): Promise<WorkspaceFileSchema[]>;
   deleteWorkspaceFile(name: string): Promise<void>;
   uploadWorkspaceFile(file: File | Blob): Promise<void>;
@@ -153,6 +154,18 @@ export const useApiManager = function () {
     }
   }
 
+  async function getEnabledPlugins(): Promise<string[]> {
+    try {
+      return (
+        await useFetch<string[]>(`${config.public.apiBase}/api/v1/bots/enabled-plugins`, {
+          onResponseError,
+        })
+      ).data.value as string[];
+    } catch (err) {
+      return [];
+    }
+  }
+
   async function getBotLog(): Promise<string> {
     try {
       return (
@@ -170,6 +183,7 @@ export const useApiManager = function () {
   return {
     putBot,
     getBot,
+    getEnabledPlugins,
     stopBot,
     continueBot,
     getBotLog,
