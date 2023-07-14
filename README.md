@@ -30,11 +30,10 @@ Click the image below to watch a demo of our GUI.
 In this release we add support for plugins, we add a "Rapid Goal" entry for fast single goal engagement while still supporting ai_settings files for complex instruction sets, we add support for GPT 3.5 16k (AutoGPT itself does not support 3.5 16k yet), we cleaned up the interface and added support for mobile.
 
 Release 1.2: Desktop Interface
-![Release 1.2 Desktop interface](https://github.com/neuronic-ai/autogpt-ui/blob/main/nai-autogpt-v1-1.png)
-
+![Release 1.2 Desktop interface](https://github.com/neuronic-ai/autogpt-ui/blob/main/autogpt1-2-desktop.png)
 
 Release 1.2: Mobile Interface
-![Release 1.2 Mobile interface](https://github.com/neuronic-ai/autogpt-ui/blob/main/nai-autogpt-mobile-v1-1.png)
+![Release 1.2 Mobile interface](https://github.com/neuronic-ai/autogpt-ui/blob/main/autogpt1-2-mobile.png)
 
 Release 1.2: API Interface
 ![Release 1.2 API interface](https://github.com/neuronic-ai/autogpt-ui/blob/main/autogpt-api.png)
