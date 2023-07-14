@@ -6,7 +6,7 @@ env-guidance.txt
 #Dont Change these
 TRAEFIK_TAG=traefik-public
 STACK_NAME=autogpt
-
+AUTO_GPT_VERSION=0.4.4  (Manually set version of autogpt to use, currently only tested with 0.4.4)
 
 ::::::::::::::
 env-backend.env
