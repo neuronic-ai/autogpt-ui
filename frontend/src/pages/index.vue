@@ -495,7 +495,7 @@ function requiredIfNot(field: keyof BotFormSchema): FormItemRule {
 }
 
 const fastTokensOptions = computed(() => {
-  if (model.value.fast_engine === LLMEngine.GPT_3_5_TURBO) {
+  if ([LLMEngine.GPT_3_5_TURBO, LLMEngine.GPT_3_5_TURBO_16K].includes(model.value.fast_engine)) {
     return gpt35TokensOptions;
   } else {
     return gpt4TokensOptions;
@@ -503,7 +503,7 @@ const fastTokensOptions = computed(() => {
 });
 
 const smartTokensOptions = computed(() => {
-  if (model.value.smart_engine === LLMEngine.GPT_3_5_TURBO) {
+  if ([LLMEngine.GPT_3_5_TURBO, LLMEngine.GPT_3_5_TURBO_16K].includes(model.value.smart_engine)) {
     return gpt35TokensOptions;
   } else {
     return gpt4TokensOptions;

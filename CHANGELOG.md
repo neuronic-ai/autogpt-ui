@@ -1,3 +1,16 @@
+## auto-gpt-ui: 1.3.2
+
+ * support 16k in 3.5 models
+
+## auto-gpt-ui: 1.3.1
+
+ * fix CachedMessageHistory update running summary
+
+## auto-gpt-ui: 1.3.0
+
+ * support Auto-GPT 0.4.4
+ * add `AUTO_GPT_VERSION` env variable to configure auto-gpt version
+
 ## auto-gpt-ui: 1.2.2
 
  * support Auto-GPT 0.4.2

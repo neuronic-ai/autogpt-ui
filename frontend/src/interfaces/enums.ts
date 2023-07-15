@@ -15,6 +15,7 @@ export enum GPT35Tokens {
   t2000 = 2000,
   t3000 = 3000,
   t4000 = 4000,
+  t16000 = 16000,
 }
 
 export enum GPT4Tokens {

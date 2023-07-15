@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install the required python packages globally
 ENV PATH="$PATH:/root/.local/bin"
+ENV PYTHONPATH=/src
 ENV PLUGINS_DIR=/plugins
 
 # Configure Poetry
@@ -24,22 +25,26 @@ WORKDIR /
 RUN poetry run pip install --upgrade pip
 RUN poetry install --no-root --only main
 RUN mkdir ${PLUGINS_DIR}
+RUN mkdir /src
 RUN curl -L -o ${PLUGINS_DIR}/Auto-GPT-Plugins.zip https://github.com/Significant-Gravitas/Auto-GPT-Plugins/archive/refs/heads/master.zip
 RUN curl -L -o ${PLUGINS_DIR}/AutoGPT_Slack.zip https://github.com/adithya77/Auto-GPT-slack-plugin/archive/refs/heads/main.zip
 RUN curl -L -o ${PLUGINS_DIR}/AutoGPT_YouTube.zip https://github.com/Yolley/AutoGPT-YouTube/archive/refs/heads/master.zip
-RUN git clone -b stable https://github.com/Significant-Gravitas/Auto-GPT.git \
-    && cd Auto-GPT \
+
+ARG AUTO_GPT_VERSION
+ENV AUTO_GPT_VERSION ${AUTO_GPT_VERSION}
+
+RUN curl -L -o auto_gpt.zip https://github.com/Significant-Gravitas/Auto-GPT/archive/refs/tags/v${AUTO_GPT_VERSION}.zip \
+    && unzip auto_gpt.zip \
+    && cd "Auto-GPT-${AUTO_GPT_VERSION}" \
+    && mv autogpt /src/ \
     && pip install -r requirements.txt \
     && python scripts/check_requirements.py requirements.txt \
     && python scripts/install_plugin_deps.py
 
-COPY ./src /src
+COPY ./src/ /src/
 COPY ./migrations /migrations
 COPY ./prisma_partial /prisma_partial
 COPY ./schema.prisma /schema.prisma
-
-RUN mv /Auto-GPT/autogpt /src/
-ENV PYTHONPATH /src
 
 COPY entrypoint.sh /entrypoint.sh
 COPY gunicorn_conf.py /gunicorn_conf.py

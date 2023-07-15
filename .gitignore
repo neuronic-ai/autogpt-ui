@@ -21,7 +21,7 @@ dist
 .idea/
 workspaces/
 logs/
-plugins/
+/plugins/
 
 gpt-tuner/
 db/*.json

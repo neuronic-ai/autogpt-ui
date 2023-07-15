@@ -1,4 +1,4 @@
-import { LLMEngine, ImageSize, GPT3_5Tokens, GPT4Tokens } from '@/interfaces/enums';
+import { LLMEngine, ImageSize, GPT35Tokens, GPT4Tokens } from '@/interfaces/enums';
 
 export interface AiSettingsSchema {
   ai_goals: string[];
@@ -9,7 +9,7 @@ export interface AiSettingsSchema {
 
 export interface BaseBotSchema {
   smart_tokens: GPT4Tokens;
-  fast_tokens: GPT3_5Tokens;
+  fast_tokens: GPT35Tokens;
   smart_engine: LLMEngine;
   fast_engine: LLMEngine;
   image_size: ImageSize;

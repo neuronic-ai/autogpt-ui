@@ -13,6 +13,9 @@ GPT_CACHE = ".gpt_cache"
 
 
 class CachedApiManager(ApiManager):
+    def load_config(self, config: Config):
+        self.config = config
+
     @classmethod
     def cast(cls, some_a: ApiManager):
         """Cast an A into a MyA."""
@@ -30,9 +33,8 @@ class CachedApiManager(ApiManager):
         )
 
     def restore(self):
-        cfg = Config()
-        workspace_path = Path(cfg.workspace_path)
-        filename = workspace_path / GPT_CACHE / f"{cfg.memory_index}-budget.json"
+        workspace_path = Path(self.config.workspace_path)
+        filename = workspace_path / GPT_CACHE / f"{self.config.memory_index}-budget.json"
         if filename.exists():
             with filename.open("rb") as f:
                 d = orjson.loads(f.read())
@@ -45,8 +47,7 @@ class CachedApiManager(ApiManager):
             self.flush()
 
     def flush(self):
-        cfg = Config()
-        with open(Path(cfg.workspace_path) / GPT_CACHE / f"{cfg.memory_index}-budget.json", "wb") as f:
+        with open(Path(self.config.workspace_path) / GPT_CACHE / f"{self.config.memory_index}-budget.json", "wb") as f:
             f.write(orjson.dumps(self.build_dict(), option=SAVE_OPTIONS))
 
     def update_cost(self, prompt_tokens, completion_tokens, model):

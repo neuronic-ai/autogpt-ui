@@ -240,6 +240,8 @@ async def run(ctx, bot_id: int):
         "PYTHONPATH": os.environ.get("PYTHONPATH"),
         "PATH": os.environ.get("PATH"),
         "WDM_PROGRESS_BAR": "0",
+        # TODO: they broke configuration in 0.4.4, update when new version is released
+        "PLUGINS_CONFIG_FILE": str(settings.WORKSPACES_DIR / "plugins.yaml"),
     }
     for k, f in settings.__fields__.items():
         if not f.field_info.extra.get("auto_gpt"):

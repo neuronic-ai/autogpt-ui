@@ -2,19 +2,17 @@ import json
 from colorama import Fore, Style
 
 from autogpt.agent.agent import Agent
-from autogpt.app import execute_command, get_command
-from autogpt.json_utils.utilities import validate_json
+from autogpt.app import execute_command, extract_command
+from autogpt.json_utils.utilities import extract_json_from_response, validate_json
 from autogpt.llm.chat import chat_with_ai
 from autogpt.llm.utils import count_string_tokens
 from autogpt.log_cycle.log_cycle import (
     FULL_MESSAGE_HISTORY_FILE_NAME,
     NEXT_ACTION_FILE_NAME,
 )
-from autogpt.logs import logger, print_assistant_thoughts
+from autogpt.logs import logger, print_assistant_thoughts, remove_ansi_escape
 from autogpt.speech import say_text
 from autogpt.spinner import Spinner
-
-from app.auto_gpt.utilities import extract_json_from_response
 
 
 class AgentStandalone(Agent):
@@ -24,8 +22,6 @@ class AgentStandalone(Agent):
             result = f"Could not execute command: {arguments}"
         elif command_name == "human_feedback":
             result = f"Human feedback: {user_input}"
-        elif command_name == "self_feedback":
-            result = f"Self feedback: {user_input}"
         else:
             for plugin in self.config.plugins:
                 if not plugin.can_handle_pre_command():
@@ -38,9 +34,9 @@ class AgentStandalone(Agent):
             )
             result = f"Command {command_name} returned: " f"{command_result}"
 
-            result_tlength = count_string_tokens(str(command_result), self.config.fast_llm_model)
-            memory_tlength = count_string_tokens(str(self.history.summary_message()), self.config.fast_llm_model)
-            if result_tlength + memory_tlength + 600 > self.fast_token_limit:
+            result_tlength = count_string_tokens(str(command_result), self.config.smart_llm)
+            memory_tlength = count_string_tokens(str(self.history.summary_message()), self.config.smart_llm)
+            if result_tlength + memory_tlength + 600 > self.smart_token_limit:
                 result = f"Failure: command {command_name} returned too much output. \
                     Do not execute this command again with the same arguments."
 
@@ -84,15 +80,15 @@ class AgentStandalone(Agent):
                     self,
                     self.system_prompt,
                     self.triggering_prompt,
-                    self.fast_token_limit,
-                    self.config.fast_llm_model,
+                    self.smart_token_limit,
+                    self.config.smart_llm,
                 )
         else:
             assistant_reply = last_assistant_reply
 
         try:
-            assistant_reply_json = extract_json_from_response(assistant_reply)
-            validate_json(assistant_reply_json)
+            assistant_reply_json = extract_json_from_response(assistant_reply.content)
+            validate_json(assistant_reply_json, self.config)
         except json.JSONDecodeError as e:
             logger.error(f"Exception while validating assistant reply JSON: {e}")
             assistant_reply_json = {}
@@ -107,10 +103,10 @@ class AgentStandalone(Agent):
             # Get command name and arguments
             try:
                 if not last_assistant_reply:
-                    print_assistant_thoughts(self.ai_name, assistant_reply_json, self.config.speak_mode)
-                command_name, arguments = get_command(assistant_reply_json)
+                    print_assistant_thoughts(self.ai_name, assistant_reply_json, self.config)
+                command_name, arguments = extract_command(assistant_reply_json, assistant_reply, self.config)
                 if self.config.speak_mode:
-                    say_text(f"I want to execute {command_name}")
+                    say_text(f"I want to execute {command_name}", self.config)
 
                 arguments = self._resolve_pathlike_command_args(arguments)
 
@@ -125,19 +121,19 @@ class AgentStandalone(Agent):
         )
 
         if not last_assistant_reply:
-            # ### GET USER AUTHORIZATION TO EXECUTE COMMAND ###
-            # Get key press: Prompt the user to press enter to continue or escape
-            # to exit
+            # First log new-line so user can differentiate sections better in console
+            logger.typewriter_log("\n")
             logger.typewriter_log(
                 "NEXT ACTION: ",
                 Fore.CYAN,
-                f"COMMAND = {Fore.CYAN}{command_name}{Style.RESET_ALL}  "
+                f"COMMAND = {Fore.CYAN}{remove_ansi_escape(command_name)}{Style.RESET_ALL}  "
                 f"ARGUMENTS = {Fore.CYAN}{arguments}{Style.RESET_ALL}",
             )
 
             logger.info(
-                "Enter 'y' to authorise command, 'y -N' to run N continuous commands, 's' to run self-feedback commands"
-                "'n' to exit program, or enter feedback for "
+                f"Enter '{self.config.authorise_key}' to authorise command, "
+                f"'{self.config.authorise_key} -N' to run N continuous commands, "
+                f"'{self.config.exit_key}' to exit program, or enter feedback for "
                 f"{self.ai_name}..."
             )
         else:

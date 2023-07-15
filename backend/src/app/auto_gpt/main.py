@@ -2,23 +2,27 @@
 import logging
 import sys
 from pathlib import Path
+from typing import Optional
 
 from colorama import Fore, Style
-
-# from webdriver_manager.firefox import GeckoDriverManager
 
 from autogpt.agent import AgentManager
 from autogpt.config.ai_config import AIConfig
 from autogpt.llm.api_manager import ApiManager
 from autogpt.setup import prompt_user
 from autogpt.utils import clean_input
-from autogpt.commands.command import CommandRegistry
-from autogpt.config import Config, check_openai_api_key
+from autogpt.config.config import Config, ConfigBuilder, check_openai_api_key
 from autogpt.configurator import create_config
 from autogpt.logs import logger
 from autogpt.memory.vector import get_memory
+from autogpt.models.command_registry import CommandRegistry
 from autogpt.prompts.prompt import DEFAULT_TRIGGERING_PROMPT
-from autogpt.utils import get_current_git_branch, get_latest_bulletin, markdown_to_ansi_style
+from autogpt.utils import (
+    get_current_git_branch,
+    get_latest_bulletin,
+    get_legal_warning,
+    markdown_to_ansi_style,
+)
 from autogpt.workspace import Workspace
 
 from app.auto_gpt.api_manager import CachedApiManager
@@ -29,94 +33,107 @@ from app.auto_gpt.plugins import scan_plugins
 
 
 COMMAND_CATEGORIES = [
-    "autogpt.commands.analyze_code",
-    "autogpt.commands.audio_text",
     "autogpt.commands.execute_code",
     "autogpt.commands.file_operations",
-    "autogpt.commands.git_operations",
-    "autogpt.commands.google_search",
-    "autogpt.commands.image_gen",
-    "autogpt.commands.improve_code",
+    "autogpt.commands.web_search",
     "autogpt.commands.web_selenium",
-    "autogpt.commands.write_tests",
     "autogpt.app",
     "autogpt.commands.task_statuses",
 ]
 
 
-def construct_main_ai_config(skip_print: bool) -> AIConfig:
+def construct_main_ai_config(
+    config: Config,
+    name: Optional[str] = None,
+    role: Optional[str] = None,
+    goals: tuple[str] = tuple(),
+    skip_print: bool = False,
+) -> AIConfig:
     """Construct the prompt for the AI to respond to
 
     Returns:
         str: The prompt string
     """
-    cfg = Config()
+    ai_config = AIConfig.load(config.ai_settings_file)
 
-    config = AIConfig.load(cfg.ai_settings_file)
+    # Apply overrides
+    if name:
+        ai_config.ai_name = name
+    if role:
+        ai_config.ai_role = role
+    if goals:
+        ai_config.ai_goals = list(goals)
+
     if not skip_print:
-        if cfg.skip_reprompt and config.ai_name:
-            logger.typewriter_log("Name :", Fore.GREEN, config.ai_name)
-            logger.typewriter_log("Role :", Fore.GREEN, config.ai_role)
-            logger.typewriter_log("Goals:", Fore.GREEN, f"{config.ai_goals}")
+        if (
+            all([name, role, goals])
+            or config.skip_reprompt
+            and all([ai_config.ai_name, ai_config.ai_role, ai_config.ai_goals])
+        ):
+            logger.typewriter_log("Name :", Fore.GREEN, ai_config.ai_name)
+            logger.typewriter_log("Role :", Fore.GREEN, ai_config.ai_role)
+            logger.typewriter_log("Goals:", Fore.GREEN, f"{ai_config.ai_goals}")
             logger.typewriter_log(
                 "API Budget:",
                 Fore.GREEN,
-                "infinite" if config.api_budget <= 0 else f"${config.api_budget}",
+                "infinite" if ai_config.api_budget <= 0 else f"${ai_config.api_budget}",
             )
-        elif config.ai_name:
+        elif all([ai_config.ai_name, ai_config.ai_role, ai_config.ai_goals]):
             logger.typewriter_log(
                 "Welcome back! ",
                 Fore.GREEN,
-                f"Would you like me to return to being {config.ai_name}?",
+                f"Would you like me to return to being {ai_config.ai_name}?",
                 speak_text=True,
             )
             should_continue = clean_input(
+                config,
                 f"""Continue with the last settings?
-                    Name:  {config.ai_name}
-                    Role:  {config.ai_role}
-                    Goals: {config.ai_goals}
-                    API Budget: {"infinite" if config.api_budget <= 0 else f"${config.api_budget}"}
-                    Continue ({cfg.authorise_key}/{cfg.exit_key}): """
+                    Name:  {ai_config.ai_name}
+                    Role:  {ai_config.ai_role}
+                    Goals: {ai_config.ai_goals}
+                    API Budget: {"infinite" if ai_config.api_budget <= 0 else f"${ai_config.api_budget}"}
+                    Continue ({config.authorise_key}/{config.exit_key}): """,
             )
-            if should_continue.lower() == cfg.exit_key:
-                config = AIConfig()
+            if should_continue.lower() == config.exit_key:
+                ai_config = AIConfig()
 
-    if not config.ai_name:
-        config = prompt_user()
-        config.save(cfg.ai_settings_file)
+    if any([not ai_config.ai_name, not ai_config.ai_role, not ai_config.ai_goals]):
+        ai_config = prompt_user(config)
+        ai_config.save(config.ai_settings_file)
 
+    if config.restrict_to_workspace:
+        logger.typewriter_log(
+            "NOTE:All files/directories created by this agent can be found inside its workspace at:",
+            Fore.YELLOW,
+            f"{config.workspace_path}",
+        )
     # set the total api budget
     api_manager = ApiManager()
     CachedApiManager.cast(api_manager)
-    api_manager.set_total_budget(config.api_budget)
+    api_manager.set_total_budget(ai_config.api_budget)
+    api_manager.load_config(config)
     api_manager.restore()
 
     if not skip_print:
         # Agent Created, print message
         logger.typewriter_log(
-            config.ai_name,
+            ai_config.ai_name,
             Fore.LIGHTBLUE_EX,
             "has been created with the following details:",
             speak_text=True,
         )
-        # Print the ai config details
+
+        # Print the ai_config details
         # Name
-        logger.typewriter_log("Name:", Fore.GREEN, config.ai_name, speak_text=False)
+        logger.typewriter_log("Name:", Fore.GREEN, ai_config.ai_name, speak_text=False)
         # Role
-        logger.typewriter_log("Role:", Fore.GREEN, config.ai_role, speak_text=False)
+        logger.typewriter_log("Role:", Fore.GREEN, ai_config.ai_role, speak_text=False)
         # Goals
         logger.typewriter_log("Goals:", Fore.GREEN, "", speak_text=False)
-        for goal in config.ai_goals:
+        for goal in ai_config.ai_goals:
             logger.typewriter_log("-", Fore.GREEN, goal, speak_text=False)
-    if api_manager.get_total_budget() > 0 and api_manager.get_total_cost() > 0:
-        remaining_budget = api_manager.get_total_budget() - api_manager.get_total_cost()
-        logger.typewriter_log("Remaining budget: ", Fore.GREEN, f"${remaining_budget:.8f}")
-        if remaining_budget <= 0:
-            logger.typewriter_log("Budget exceeded, exit immediately", Fore.RED)
-            sys.exit(1)
-    # manager = GeckoDriverManager()
-    # logger.typewriter_log("Gecko driver path: ", Fore.GREEN, f"{manager.install()}")
-    return config
+
+    return ai_config
 
 
 def run_auto_gpt(
@@ -133,19 +150,26 @@ def run_auto_gpt(
     browser_name: str,
     allow_downloads: bool,
     skip_news: bool,
-    workspace_directory: str,
+    workspace_directory: str | Path,
     install_plugin_deps: bool,
     max_cache_size: int,
+    ai_name: Optional[str] = None,
+    ai_role: Optional[str] = None,
+    ai_goals: tuple[str] = tuple(),
 ):
     # Configure logging before we do anything else.
     logger.set_level(logging.DEBUG if debug else logging.INFO)
-    logger.speak_mode = speak
 
-    cfg = Config()
+    config = ConfigBuilder.build_config_from_env()
+    # HACK: This is a hack to allow the config into the logger without having to pass it around everywhere
+    # or import it directly.
+    logger.config = config
+
     # TODO: fill in llm values here
-    check_openai_api_key()
+    check_openai_api_key(config)
+
     create_config(
-        cfg,
+        config,
         continuous,
         continuous_limit,
         "",
@@ -160,16 +184,20 @@ def run_auto_gpt(
         allow_downloads,
         skip_news,
     )
-    cfg.skip_reprompt = skip_reprompt
-    cfg.ai_settings_file = ai_settings
+    config.skip_reprompt = skip_reprompt
+    config.ai_settings_file = ai_settings
 
-    if not cfg.skip_news:
+    if config.continuous_mode:
+        for line in get_legal_warning().split("\n"):
+            logger.warn(markdown_to_ansi_style(line), "LEGAL:", Fore.RED)
+
+    if not config.skip_news:
         motd, is_new_motd = get_latest_bulletin()
         if motd:
             motd = markdown_to_ansi_style(motd)
             for motd_line in motd.split("\n"):
                 logger.info(motd_line, "NEWS:", Fore.GREEN)
-            if is_new_motd and not cfg.chat_messages_enabled:
+            if is_new_motd and not config.chat_messages_enabled:
                 input(
                     Fore.MAGENTA
                     + Style.BRIGHT
@@ -202,65 +230,71 @@ def run_auto_gpt(
     else:
         workspace_directory = Path(workspace_directory)
     workspace_directory = Workspace.make_workspace(workspace_directory)
-    cfg.workspace_path = str(workspace_directory)
+    config.workspace_path = str(workspace_directory)
 
     # HACK: doing this here to collect some globals that depend on the workspace.
-    file_logger_path = workspace_directory / "file_logger.txt"
-    if not file_logger_path.exists():
-        with file_logger_path.open(mode="w", encoding="utf-8") as f:
-            f.write("File Operation Logger ")
+    Workspace.build_file_logger_path(config, workspace_directory)
 
-    cfg.file_logger_path = str(file_logger_path)
-
-    cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
+    config.plugins = scan_plugins(config, config.debug_mode)
     # Create a CommandRegistry instance and scan default folder
     command_registry = CommandRegistry()
-    logger.debug(f"The following command categories are disabled: {cfg.disabled_command_categories}")
-    enabled_command_categories = [x for x in COMMAND_CATEGORIES if x not in cfg.disabled_command_categories]
+
+    logger.debug(f"The following command categories are disabled: {config.disabled_command_categories}")
+    enabled_command_categories = [x for x in COMMAND_CATEGORIES if x not in config.disabled_command_categories]
 
     logger.debug(f"The following command categories are enabled: {enabled_command_categories}")
 
     for command_category in enabled_command_categories:
         command_registry.import_commands(command_category)
 
-    message_history = CachedMessageHistory(None)
+    # Unregister commands that are incompatible with the current config
+    incompatible_commands = []
+    for command in command_registry.commands.values():
+        if callable(command.enabled) and not command.enabled(config):
+            command.enabled = False
+            incompatible_commands.append(command)
+
+    for command in incompatible_commands:
+        command_registry.unregister(command)
+        logger.debug(
+            f"Unregistering incompatible command: {command.name}, "
+            f"reason - {command.disabled_reason or 'Disabled by current config.'}"
+        )
+
+    message_history = CachedMessageHistory.load_from_file(None, config)
     while message_history.filename.stat().st_size >= max_cache_size:
         logger.typewriter_log("Truncating cache...")
         message_history.messages[:] = message_history.messages[(len(message_history.messages) // 4) or 1 :]
         message_history.flush()
-    AgentManager().agents = CachedAgents(cfg)
-
-    # add chat plugins capable of report to logger
-    if cfg.chat_messages_enabled:
-        for plugin in cfg.plugins:
-            if hasattr(plugin, "can_handle_report") and plugin.can_handle_report():
-                logger.info(f"Loaded plugin into logger: {plugin.__class__.__name__}")
-                logger.chat_plugins.append(plugin)
+    AgentManager(config).agents = CachedAgents(config)
 
     try:
-        last_assistant_reply = next(filter(lambda x: x.role == "assistant", reversed(message_history.messages))).content
+        last_assistant_reply = next(filter(lambda x: x.role == "assistant", reversed(message_history.messages)))
     except StopIteration:
         last_assistant_reply = None
 
-    ai_name = ""
-    ai_config = construct_main_ai_config(bool(last_assistant_reply))
+    ai_config = construct_main_ai_config(
+        config, name=ai_name, role=ai_role, goals=ai_goals, skip_print=bool(last_assistant_reply)
+    )
     ai_config.command_registry = command_registry
+    ai_name = ai_config.ai_name
 
     # add chat plugins capable of report to logger
-    if cfg.chat_messages_enabled:
-        for plugin in cfg.plugins:
+    if config.chat_messages_enabled:
+        for plugin in config.plugins:
             if hasattr(plugin, "can_handle_report") and plugin.can_handle_report():
                 logger.info(f"Loaded plugin into logger: {plugin.__class__.__name__}")
                 logger.chat_plugins.append(plugin)
 
     # Initialize memory and make sure it is empty.
     # this is particularly important for indexing and referencing pinecone memory
-    memory = get_memory(cfg, init=True)
+    memory = get_memory(config)
+    memory.clear()
     if not last_assistant_reply:
         logger.typewriter_log("Using memory of type:", Fore.GREEN, f"{memory.__class__.__name__}")
-        logger.typewriter_log("Using Browser:", Fore.GREEN, cfg.selenium_web_browser)
-    system_prompt = ai_config.construct_full_prompt()
-    if cfg.debug_mode:
+        logger.typewriter_log("Using Browser:", Fore.GREEN, config.selenium_web_browser)
+    system_prompt = ai_config.construct_full_prompt(config)
+    if config.debug_mode:
         logger.typewriter_log("Prompt:", Fore.GREEN, system_prompt)
 
     agent = AgentStandalone(
@@ -269,7 +303,7 @@ def run_auto_gpt(
         next_action_count=0,
         command_registry=command_registry,
         ai_config=ai_config,
-        config=cfg,
+        config=config,
         system_prompt=system_prompt,
         triggering_prompt=DEFAULT_TRIGGERING_PROMPT,
         workspace_directory=workspace_directory,

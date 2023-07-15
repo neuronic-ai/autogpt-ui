@@ -1,4 +1,6 @@
 """Main script for the autogpt package."""
+from typing import Optional
+
 import click
 
 
@@ -66,6 +68,22 @@ import click
     help="Installs external dependencies for 3rd party plugins.",
 )
 @click.option(
+    "--ai-name",
+    type=str,
+    help="AI name override",
+)
+@click.option(
+    "--ai-role",
+    type=str,
+    help="AI role override",
+)
+@click.option(
+    "--ai-goal",
+    type=str,
+    multiple=True,
+    help="AI goal override; may be used multiple times to pass multiple goals",
+)
+@click.option(
     "--max-cache-size",
     type=int,
     help="Max size for cache objects.",
@@ -88,6 +106,9 @@ def main(
     skip_news: bool,
     workspace_directory: str,
     install_plugin_deps: bool,
+    ai_name: Optional[str],
+    ai_role: Optional[str],
+    ai_goal: tuple[str],
     max_cache_size: int,
 ) -> None:
     """
@@ -116,6 +137,9 @@ def main(
             workspace_directory,
             install_plugin_deps,
             max_cache_size,
+            ai_name,
+            ai_role,
+            ai_goal,
         )
 
 
