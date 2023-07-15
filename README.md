@@ -13,6 +13,8 @@ Welcome to the official repository of **Neuronic AI's, AutoGPT GUI**. This open-
 ### Demo-Tutorial
 Various multimedia and content in support of using this code
 
+Additionally, we have a puiblicly available free demo available online to try, however, it is signficantly restricted with no ablity to run code or administrative commands and you need to bring your own OpenAI API key. The demo can be accessed on No|App and it requires users to create a login and add an OpenAI API key to use but then is available online @ [https://noapp.ai](https://noapp.ai/apps/app.html?app=9). If you are not logged in it will forward you to login where you can choose to register with an email address or Google. Using your email to sign up versus Google will require you to verify your email. Once you have an account, go to the menu and select "unlock AI" and add your OpenAI API key, after this all the AI services on No|App will be available for you to use or demo.
+
 #### Installation
 Click the image below for a tutorial on installing AutoGPT-ui
 
