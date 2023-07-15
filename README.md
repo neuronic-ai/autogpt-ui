@@ -63,7 +63,8 @@ We have released 1.0 to the public and we are working on release 1.1 now and wil
 - Containerized with API backend, worker and frontend along with supporting containers
 
 #### Release 1.2:
- - Built on AutoGPT Stable
+ - Built on AutoGPT 0.4.4
+ - Can choose what AutoGPT branch to use on build
  - Supports everything that Release1.0 supports except for the resume function
  - Support for Rapid Tasks: Execute a single tasks in a rapid manner without any hassle.
  - Plugins: Add more functionalities to your interface with an array of popular plugins support
