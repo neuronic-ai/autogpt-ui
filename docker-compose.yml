@@ -25,6 +25,8 @@ services:
   worker:
     build:
       context: backend
+      args:
+        AUTO_GPT_VERSION: "${AUTO_GPT_VERSION:-0.4.4}"
     command:
       - worker
     depends_on:
@@ -39,6 +41,8 @@ services:
   api:
     build:
       context: backend
+      args:
+        AUTO_GPT_VERSION: "${AUTO_GPT_VERSION:-0.4.4}"
     command:
       - api
     depends_on:
